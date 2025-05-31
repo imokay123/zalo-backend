@@ -6,22 +6,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const ZALO_TOKEN = "Wguv5y7Q7161eZCMpTeN48ocFXBDnGzS_Rb4FyAC4JdUftrYmOqYE_ciU6FBWYS7vur-GUQrDLYgj4CEfCmF2RF8SacqvoHBY_m12P3RKcs2-GGUfPbr4vcp2s2NkouClBf5T9cwRdEfm40-YxrbRuwzIYZEaonbyRrPCFUR46knvsOmYEGpJPRUO12ln4LrwhbjSQlD7Z3do6jArBHFAVRD86p7uGzeu9KhDzAKVrEIjn0Kbvj_GusJ6YwEb3H2k9XbEw3ZBtVisMSCgSODVwlWOmc6wHuEbE1dOz2PJG_kx7nmnUunSFRR7nVGx4jQqlOTDj_PPLUQrG4IYCrUSRRqANVmz7yEj8alTg6dOWg_dZTHdFvjLLDqJHmqmiqK5W"; // Thay bằng token Zalo thật
+const ZALO_TOKEN = process.env.ZALO_TOKEN; // Dùng biến môi trường cho an toàn
+const ZALO_USER_ID = process.env.ZALO_USER_ID; // Bạn đặt trong Environment Variables của Render
 
 app.post("/send-zalo", async (req, res) => {
-  const { name, phone, time, zalo_user_id } = req.body;
+  const { name, phone, date, time, service } = req.body;
 
-  if (!name || !phone || !time || !zalo_user_id) {
+  if (!name || !phone || !date || !time || !service) {
     return res.status(400).json({ error: "Thiếu thông tin" });
   }
 
-  const message = `Cảm ơn ${name} đã đặt lịch lúc ${time}. SĐT: ${phone}`;
+  const message = `
+[Zin Spa] Có đơn đặt lịch mới:
+- Khách: ${name}
+- SĐT: ${phone}
+- Dịch vụ: ${service}
+- Ngày: ${date}
+- Giờ: ${time}
+  `;
 
   try {
     const response = await axios.post(
       "https://openapi.zalo.me/v3.0/oa/message",
       {
-        recipient: { user_id: zalo_user_id },
+        recipient: { user_id: ZALO_USER_ID },
         message: { text: message },
       },
       {
@@ -34,10 +42,10 @@ app.post("/send-zalo", async (req, res) => {
 
     res.json({ success: true, zalo: response.data });
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    res.status(500).json({ error: "Lỗi gửi Zalo" });
+    console.error("Zalo API error:", error.response?.data || error.message);
+    res.status(500).json({ error: "Lỗi gửi tin nhắn Zalo" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Zalo server chạy ở http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
